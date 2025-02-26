@@ -1,0 +1,61 @@
+name: Comment Posting PRs
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  analyze_flash:
+    name: Analyzing ${{ matrix.target }}
+    runs-on: ubuntu-24.04
+    outputs:
+      buildate: ${{ steps.builder.outputs.buildate }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Build Target
+        id: builder
+        run: |
+          echo "buildate=$(bash ./build.sh)" >> $GITHUB_OUTPUT
+
+  post_pr_comment:
+    name: Publish Results
+    runs-on: ubuntu-24.04
+    needs: [analyze_flash]
+    steps:
+      - name: Find Comment
+        uses: peter-evans/find-comment@v3
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: "Current Date"
+
+      - name: Set Build Time
+        id: bt
+        run: |
+          echo "timestamp=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_OUTPUT
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## 🔎 Current Date:
+            ```
+            ${{ needs.analyze_flash.outputs.buildate }}
+            ```
+          edit-mode: replace
