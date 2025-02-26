@@ -15,7 +15,7 @@ on:
 
 jobs:
   analyze_flash:
-    name: Analyzing ${{ matrix.target }}
+    name: Analyzing
     runs-on: ubuntu-24.04
     outputs:
       buildate: ${{ steps.builder.outputs.buildate }}
@@ -31,7 +31,7 @@ jobs:
           echo "buildate=$(bash ./build.sh)" >> $GITHUB_OUTPUT
 
   post_pr_comment:
-    name: Publish Results
+    name: Publishing Results
     runs-on: ubuntu-24.04
     needs: [analyze_flash]
     if: ${{ github.event.pull_request }}
